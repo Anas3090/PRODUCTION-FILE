@@ -89,7 +89,7 @@ function editEntry(index) {
   const entry = data[index];
 
   // Go to add.html and preload form
-  window.location.href = "add.html?edit=" + index;
+  window.location.href = "Add.html?edit=" + index;
 }
 
 // Preload form if editing
