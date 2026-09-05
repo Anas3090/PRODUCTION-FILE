@@ -22,3 +22,15 @@ form.addEventListener("submit", async (e) => {
   alert("Data saved!");
   form.reset();
 });
+async function loadData() {
+  const res = await fetch("YOUR_GOOGLE_SCRIPT_URL");
+  const rows = await res.json();
+  const tableBody = document.getElementById("dataRows");
+  tableBody.innerHTML = "";
+  rows.slice(1).forEach(row => { // skip header
+    const tr = document.createElement("tr");
+    tr.innerHTML = row.map(val => `<td>${val}</td>`).join("");
+    tableBody.appendChild(tr);
+  });
+}
+document.addEventListener("DOMContentLoaded", loadData);
