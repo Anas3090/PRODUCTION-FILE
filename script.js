@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (form) {
     form.addEventListener("submit", (e) => {
       e.preventDefault();
+
       const entry = {
         workDate: document.getElementById("workDate").value,
         co186: document.getElementById("co186").value || 0,
@@ -15,13 +16,23 @@ document.addEventListener("DOMContentLoaded", () => {
         uhc: document.getElementById("uhc").value || 0,
         roi: document.getElementById("roi").value || 0,
       };
+
       const total = Object.values(entry).slice(1).reduce((a,b)=>a+Number(b),0);
       entry.total = total;
       entry.status = total >= 64 ? "✅" : "❌";
       entry.percent = total ? ((total/64)*100).toFixed(2) + "%" : "";
 
-      const data = JSON.parse(localStorage.getItem("productionData") || "[]");
-      data.push(entry);
+      let data = JSON.parse(localStorage.getItem("productionData") || "[]");
+
+      // If editing, replace the old entry
+      const editIndex = form.getAttribute("data-edit-index");
+      if (editIndex !== null) {
+        data[editIndex] = entry;
+        form.removeAttribute("data-edit-index");
+      } else {
+        data.push(entry);
+      }
+
       localStorage.setItem("productionData", JSON.stringify(data));
       alert("Data saved successfully!");
       form.reset();
@@ -33,7 +44,8 @@ document.addEventListener("DOMContentLoaded", () => {
   if (tableBody) {
     const data = JSON.parse(localStorage.getItem("productionData") || "[]");
     let totalSum = 0, percentSum = 0;
-    data.forEach((row) => {
+
+    data.forEach((row, index) => {
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>${row.workDate}</td>
@@ -48,12 +60,59 @@ document.addEventListener("DOMContentLoaded", () => {
         <td>${row.total}</td>
         <td>${row.status}</td>
         <td>${row.percent}</td>
+        <td>
+          <button onclick="editEntry(${index})">Edit</button>
+          <button onclick="deleteEntry(${index})">Delete</button>
+        </td>
       `;
       tableBody.appendChild(tr);
       totalSum += row.total;
       percentSum += parseFloat(row.percent) || 0;
     });
+
     document.getElementById("totalSum").textContent = totalSum;
     document.getElementById("avgPercent").textContent = (percentSum/data.length).toFixed(2) + "%";
+  }
+});
+
+// Delete entry
+function deleteEntry(index) {
+  let data = JSON.parse(localStorage.getItem("productionData") || "[]");
+  data.splice(index, 1);
+  localStorage.setItem("productionData", JSON.stringify(data));
+  location.reload(); // refresh dashboard
+}
+
+// Edit entry
+function editEntry(index) {
+  let data = JSON.parse(localStorage.getItem("productionData") || "[]");
+  const entry = data[index];
+
+  // Go to add.html and preload form
+  window.location.href = "add.html?edit=" + index;
+}
+
+// Preload form if editing
+document.addEventListener("DOMContentLoaded", () => {
+  const params = new URLSearchParams(window.location.search);
+  if (params.has("edit")) {
+    const index = params.get("edit");
+    const data = JSON.parse(localStorage.getItem("productionData") || "[]");
+    const entry = data[index];
+
+    if (entry) {
+      document.getElementById("workDate").value = entry.workDate;
+      document.getElementById("co186").value = entry.co186;
+      document.getElementById("co252").value = entry.co252;
+      document.getElementById("c210").value = entry.c210;
+      document.getElementById("c18626").value = entry.c18626;
+      document.getElementById("anthem").value = entry.anthem;
+      document.getElementById("humana").value = entry.humana;
+      document.getElementById("uhc").value = entry.uhc;
+      document.getElementById("roi").value = entry.roi;
+
+      const form = document.getElementById("dataForm");
+      form.setAttribute("data-edit-index", index);
+    }
   }
 });
